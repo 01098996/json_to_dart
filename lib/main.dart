@@ -38,7 +38,7 @@ ${argParser.usage}
     outputPath = "./${className}.dart";
   }
 
-  final classGenerator = new ModelGenerator('FollowRecommend');
+  final classGenerator = new ModelGenerator(className);
   final jsonRawData = new File(jsonFile).readAsStringSync();
   DartCode dartCode = classGenerator.generateDartClasses(jsonRawData);
   File(outputPath).writeAsStringSync(dartCode.code);
