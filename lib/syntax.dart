@@ -107,6 +107,18 @@ class TypeDefinition {
       if (name == "List") {
         return "$fieldKey = json['$key'].cast<$subtype>();";
       }
+
+      switch (this.name) {
+        case 'String':
+          return "$fieldKey = json['$key'] == null ? \"\" : json['$key'];";
+        case 'int':
+          return "$fieldKey = json['$key'] == null ? 0 : json['$key'];";
+        case 'double':
+          return "$fieldKey = json['$key'] == null ? 0.0 : json['$key'];";
+        case 'bool':
+          return "$fieldKey = json['$key'] == null ? 0.0 : json['$key'];";
+      }
+
       return "$fieldKey = json['$key'];";
     } else if (name == "List" && subtype == "DateTime") {
       return "$fieldKey = json['$key'].map((v) => DateTime.tryParse(v));";
@@ -117,7 +129,9 @@ class TypeDefinition {
       return "if (json['$key'] != null) {\n\t\t\t$fieldKey = new List<$subtype>();\n\t\t\tjson['$key'].forEach((v) { $fieldKey.add(new $subtype.fromJson(v)); });\n\t\t}";
     } else {
       // class
-      return "$fieldKey = json['$key'] != null ? ${_buildParseClass(jsonKey)} : null;";
+
+      final properType = subtype != null ? subtype : name;
+      return "$fieldKey = json['$key'] != null ? ${_buildParseClass(jsonKey)} : $properType.fromJson({});";
     }
   }
 
@@ -274,6 +288,14 @@ class ClassDefinition {
     return sb.toString();
   }
 
+  String get _defaultStaticConstructor {
+    final sb = new StringBuffer();
+    sb.write('\t static $name createFromJson(Map<String, dynamic> json) {');
+    sb.write('return $name.fromJson(json);');
+    sb.write('}');
+    return sb.toString();
+  }
+
   String get _defaultConstructor {
     final sb = new StringBuffer();
     sb.write('\t$name({');
@@ -283,7 +305,32 @@ class ClassDefinition {
       final f = fields[key];
       final fieldName =
           fixFieldName(key, typeDef: f, privateField: privateFields);
-      sb.write('this.$fieldName');
+
+      switch (f.name) {
+        case 'String':
+          sb.write('this.$fieldName = \"\"');
+          break;
+        case 'int':
+          sb.write('this.$fieldName = 0');
+          break;
+        case 'double':
+          sb.write('this.$fieldName = 0.0');
+          break;
+        case 'bool':
+          sb.write('this.$fieldName = false');
+          break;
+        case 'List':
+          sb.write('this.$fieldName = const []');
+          break;
+        case 'Map':
+          sb.write('this.$fieldName = const {}');
+          break;
+        default:
+          sb.write('this.$fieldName');
+          break;
+      }
+
+
       if (i != len) {
         sb.write(', ');
       }
@@ -318,9 +365,9 @@ class ClassDefinition {
 
   String toString() {
     if (privateFields) {
-      return 'class $name {\n$_fieldList\n\n$_defaultPrivateConstructor\n\n$_gettersSetters\n\n$_jsonParseFunc\n\n$_jsonGenFunc\n}\n';
+      return 'class $name {\n$_fieldList\n\n$_defaultStaticConstructor\n\n$_defaultPrivateConstructor\n\n$_gettersSetters\n\n$_jsonParseFunc\n\n$_jsonGenFunc\n}\n';
     } else {
-      return 'class $name {\n$_fieldList\n\n$_defaultConstructor\n\n$_jsonParseFunc\n\n$_jsonGenFunc\n}\n';
+      return 'class $name {\n$_fieldList\n\n$_defaultStaticConstructor\n\n$_defaultConstructor\n\n$_jsonParseFunc\n\n$_jsonGenFunc\n}\n';
     }
   }
 }
