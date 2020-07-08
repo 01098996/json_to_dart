@@ -116,7 +116,7 @@ class TypeDefinition {
         case 'double':
           return "$fieldKey = json['$key'] == null ? 0.0 : json['$key'];";
         case 'bool':
-          return "$fieldKey = json['$key'] == null ? 0.0 : json['$key'];";
+          return "$fieldKey = json['$key'] == null ? false : json['$key'];";
       }
 
       return "$fieldKey = json['$key'];";
